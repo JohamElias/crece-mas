@@ -4,11 +4,15 @@ import CitaCard from "../../Components/CitaCard";
 import { Cita } from "../../models/Cita";
 import { Button, Col, Form, Modal, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import useCitas from "../../hooks/useCitas";
+import { desactivarCita } from "../../helpers/cita";
 
 const ListaCitas: React.FC = () => {
-  const [citas, setCitas] = useState<Cita[]>(
+  /*const [citas, setCitas] = useState<Cita[]>(
     JSON.parse(localStorage.getItem("citas") || "[]")
-  );
+  );*/
+  const [flag,setFlag] = useState(true)
+  const{citas, isLoading} = useCitas(flag)
 
   const [citaSeleccionada, setCitaSeleccionada] = useState<Cita | null>(null);
   const [modalShow, setModalShow] = useState(false);
@@ -18,23 +22,21 @@ const ListaCitas: React.FC = () => {
     setModalShow(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (citaSeleccionada) {
-      const citasActualizadas = citas.filter(
-        (cita) =>
-          cita.paciente.dni !== citaSeleccionada.paciente.dni ||
-          cita.fechaCita !== citaSeleccionada.fechaCita ||
-          cita.horaCita !== citaSeleccionada.horaCita
-      );
-
-      setCitas(citasActualizadas);
-      localStorage.setItem("citas", JSON.stringify(citasActualizadas));
-
+      console.log(citaSeleccionada);
+      await desactivarCita(citaSeleccionada.id)
+      setFlag(!flag)
       handleClose();
     }
   };
 
   const handleClose = () => setModalShow(false);
+
+  
+  if(isLoading){
+    return("Cargando...")
+  }
 
   return (
     <>
@@ -45,7 +47,6 @@ const ListaCitas: React.FC = () => {
             type="submit"
             style={{ width: "10rem", color: "white", margin: "auto" }}
             className="mb-5"
-            onClick={() => console.log("Hola")}
           >
             Añadir Cita
           </Button>

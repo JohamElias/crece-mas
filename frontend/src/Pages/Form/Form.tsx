@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useLocalStorage } from "../../hooks/useLocalStorage";
+import { buscarPacientePorDNI, crearPaciente } from "../../helpers/paciente";
+import { crearCita } from "../../helpers/cita";
 
 
 function FormularioCitasMedicas() {
@@ -13,7 +15,8 @@ function FormularioCitasMedicas() {
   const [fecha, setFecha] = useLocalStorage("fecha", "");
   const [hora, setHora] = useLocalStorage("hora", "");
   const [genero, setGenero] = useLocalStorage("genero", "");
-
+  const[pacienteEncontrado,setPacienteEncontrado]=useState(false)
+  const[idPacienteEncontrado,setIdPacienteEncontrado]=useState(0)
 
   const limpiarCampos=()=>{
     setNombre('');
@@ -24,28 +27,25 @@ function FormularioCitasMedicas() {
       setGenero('');
   }
 
-  const handleSubmit = (event: any) => {
+  const handleSubmit = async (event: any) => {
     event.preventDefault();
     const form = event.currentTarget;
   
     if (form.checkValidity() === true) {
-      const nuevaCita = {
-        paciente: {
-          nombre,
-          dni,
-          genero,
-        },
-        fechaCita: fecha,
-        horaCita: hora,
-        sintomas: sintomas,
-      };
-  
-      // Obtener citas actuales de LocalStorage y agregar la nueva cita
+      if(!pacienteEncontrado){
+        const pacienteId = await crearPaciente({nombre, dni, genero});
+        crearCita(pacienteId, fecha, hora, sintomas);
+      }else{
+        crearCita(idPacienteEncontrado, fecha, hora, sintomas);
+      }
+      
+      
+      /*
       const citasActuales = JSON.parse(localStorage.getItem("citas") || "[]");
       citasActuales.push(nuevaCita);
       localStorage.setItem("citas", JSON.stringify(citasActuales));
+      */
   
-      // Limpiar formulario o redirigir a otra página si es necesario
       limpiarCampos()
       navigate('/');
     }
@@ -58,8 +58,23 @@ function FormularioCitasMedicas() {
     if (value.length <= 8) {
       setDni(value);
     }
+    if(value.length==8){
+      realizarBusqueda(value)
+    }
   };
 
+  const realizarBusqueda=async(value:string)=>{
+    const nombreEncontrado=await buscarPacientePorDNI(value)
+    if(nombreEncontrado){
+      //console.log(nombreEncontrado);
+      setPacienteEncontrado(true)
+      setNombre(nombreEncontrado.nombre)
+      setGenero(nombreEncontrado.genero)
+      setIdPacienteEncontrado(nombreEncontrado.id)
+    }else{
+      setPacienteEncontrado(false)
+    }
+  }
 
 
   return (
